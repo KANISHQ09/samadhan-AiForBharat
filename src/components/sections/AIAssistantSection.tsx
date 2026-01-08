@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   MessageSquare, 
   Mic, 
+  MicOff,
   Send,
   Bot,
   User,
@@ -20,12 +21,103 @@ const initialMessages: ChatMessage[] = [
   },
 ];
 
+// Web Speech API types
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
 export function AIAssistantSection() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
+
+  // Check for speech recognition support
+  const isSpeechSupported = typeof window !== 'undefined' && 
+    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (!isSpeechSupported) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognitionRef.current = new SpeechRecognition();
+    recognitionRef.current.continuous = false;
+    recognitionRef.current.interimResults = true;
+    recognitionRef.current.lang = 'hi-IN'; // Default to Hindi, also understands English
+
+    recognitionRef.current.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join('');
+      setInputValue(transcript);
+    };
+
+    recognitionRef.current.onerror = (event) => {
+      setIsListening(false);
+      if (event.error !== 'aborted') {
+        toast({
+          title: "Voice Error",
+          description: "Could not recognize speech. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    recognitionRef.current.onend = () => {
+      setIsListening(false);
+    };
+
+    return () => {
+      recognitionRef.current?.stop();
+    };
+  }, [isSpeechSupported, toast]);
+
+  const toggleListening = useCallback(() => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Not Supported",
+        description: "Voice input is not supported in your browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      setInputValue("");
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  }, [isListening, toast]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -140,11 +232,17 @@ export function AIAssistantSection() {
 
               {/* Chat Input */}
               <div className="p-4 border-t border-border">
-                <div className="flex items-center gap-2">
-                  <Button variant="voice" size="icon" disabled>
-                    <Mic className="w-5 h-5" />
+              <div className="flex items-center gap-2">
+                  <Button 
+                    variant={isListening ? "destructive" : "voice"} 
+                    size="icon" 
+                    onClick={toggleListening}
+                    disabled={isLoading || !isSpeechSupported}
+                    className={isListening ? "animate-pulse" : ""}
+                  >
+                    {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                   </Button>
-                  <input 
+                  <input
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
