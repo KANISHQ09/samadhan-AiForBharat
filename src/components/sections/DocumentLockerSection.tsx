@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { 
   FolderLock, 
   Upload, 
@@ -13,37 +14,39 @@ import {
   CheckCircle2
 } from "lucide-react";
 
-const documentTypes = [
-  { icon: <CreditCard className="w-5 h-5" />, name: "Aadhaar Card", status: "verified" },
-  { icon: <FileText className="w-5 h-5" />, name: "PAN Card", status: "verified" },
-  { icon: <GraduationCap className="w-5 h-5" />, name: "Education Certificates", status: "3 files" },
-  { icon: <Home className="w-5 h-5" />, name: "Property Documents", status: "expires soon" },
-];
-
-const features = [
-  {
-    icon: <Shield className="w-6 h-6" />,
-    title: "Bank-Grade Security",
-    description: "End-to-end encryption for all your documents",
-  },
-  {
-    icon: <FileText className="w-6 h-6" />,
-    title: "Smart Auto-Tagging",
-    description: "AI automatically categorizes your documents",
-  },
-  {
-    icon: <Bell className="w-6 h-6" />,
-    title: "Expiry Reminders",
-    description: "Never miss a renewal deadline",
-  },
-  {
-    icon: <Upload className="w-6 h-6" />,
-    title: "Quick Reuse",
-    description: "Attach documents to any application instantly",
-  },
-];
-
 export function DocumentLockerSection() {
+  const { t } = useLanguage();
+
+  const documentTypes = [
+    { icon: <CreditCard className="w-5 h-5" />, name: "Aadhaar Card", status: "verified" },
+    { icon: <FileText className="w-5 h-5" />, name: "PAN Card", status: "verified" },
+    { icon: <GraduationCap className="w-5 h-5" />, name: "Education Certificates", status: "3 files" },
+    { icon: <Home className="w-5 h-5" />, name: "Property Documents", status: "expires soon" },
+  ];
+
+  const features = [
+    {
+      icon: <Shield className="w-6 h-6" />,
+      title: t("documents.bankGrade"),
+      description: t("documents.bankDesc"),
+    },
+    {
+      icon: <FileText className="w-6 h-6" />,
+      title: t("documents.autoTagging"),
+      description: t("documents.autoDesc"),
+    },
+    {
+      icon: <Bell className="w-6 h-6" />,
+      title: t("documents.expiryReminders"),
+      description: t("documents.expiryDesc"),
+    },
+    {
+      icon: <Upload className="w-6 h-6" />,
+      title: t("documents.quickReuse"),
+      description: t("documents.reuseDesc"),
+    },
+  ];
+
   return (
     <section id="documents" className="py-20 bg-background relative overflow-hidden">
       {/* Background Pattern */}
@@ -59,17 +62,16 @@ export function DocumentLockerSection() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full text-primary text-sm font-medium mb-6">
               <FolderLock className="w-4 h-4" />
-              Secure Storage
+              {t("documents.badge")}
             </div>
             
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Your Digital{" "}
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-glow">Document Locker</span>
+              {t("documents.title")}{" "}
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-glow">{t("documents.locker")}</span>
             </h2>
             
             <p className="text-lg text-muted-foreground mb-8">
-              Store all your important documents securely. Auto-tagged, always accessible, 
-              and ready to attach to any government application.
+              {t("documents.subtitle")}
             </p>
 
             {/* Features */}
@@ -92,7 +94,7 @@ export function DocumentLockerSection() {
 
             <Button variant="hero">
               <Lock className="w-5 h-5" />
-              Open Document Locker
+              {t("documents.openLocker")}
             </Button>
           </div>
 
@@ -106,13 +108,13 @@ export function DocumentLockerSection() {
                     <FolderLock className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-foreground">My Documents</h4>
+                    <h4 className="font-semibold text-foreground">{t("documents.myDocuments")}</h4>
                     <p className="text-sm text-muted-foreground">12 files • 24 MB used</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm">
                   <Upload className="w-4 h-4" />
-                  Upload
+                  {t("documents.upload")}
                 </Button>
               </div>
 
@@ -133,13 +135,13 @@ export function DocumentLockerSection() {
                       {doc.status === "verified" && (
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-accent">
                           <CheckCircle2 className="w-3 h-3" />
-                          Verified
+                          {t("documents.verified")}
                         </span>
                       )}
                       {doc.status === "expires soon" && (
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-warning">
                           <Bell className="w-3 h-3" />
-                          Expires Soon
+                          {t("documents.expiresSoon")}
                         </span>
                       )}
                       {doc.status === "3 files" && (
@@ -154,8 +156,8 @@ export function DocumentLockerSection() {
               {/* Quick Tip */}
               <div className="mt-6 p-4 bg-accent/10 rounded-xl border border-accent/20">
                 <p className="text-sm text-foreground">
-                  <span className="font-medium">💡 Tip:</span>{" "}
-                  Connect your DigiLocker for automatic document sync
+                  <span className="font-medium">💡 {t("documents.tip")}</span>{" "}
+                  {t("documents.tipText")}
                 </p>
               </div>
             </div>
@@ -163,7 +165,7 @@ export function DocumentLockerSection() {
             {/* Security Badge */}
             <div className="absolute -bottom-4 -left-4 bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 animate-float">
               <Shield className="w-5 h-5" />
-              <span className="font-medium">256-bit Encrypted</span>
+              <span className="font-medium">{t("documents.encrypted")}</span>
             </div>
           </div>
         </div>
