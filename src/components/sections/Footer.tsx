@@ -1,3 +1,4 @@
+import React, { forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { 
@@ -18,7 +19,7 @@ const socialLinks = [
   { icon: <Youtube className="w-5 h-5" />, href: "#", label: "YouTube" },
 ];
 
-export function Footer() {
+export const Footer = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props, ref) => {
   const { t, language } = useLanguage();
 
   const quickLinks = [
@@ -38,7 +39,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-foreground text-background">
+    <footer ref={ref} className="bg-foreground text-background" {...props}>
       <div className="container mx-auto px-4">
         {/* Main Footer */}
         <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
@@ -144,4 +145,6 @@ export function Footer() {
       </div>
     </footer>
   );
-}
+});
+
+Footer.displayName = "Footer";
