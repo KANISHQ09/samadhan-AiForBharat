@@ -54,32 +54,38 @@ export function FormAnalyzerSection() {
   ];
 
   return (
-    <section id="analyzer" className="py-20 bg-background relative overflow-hidden">
-      {/* Background Gradient */}
-      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
-      
+    <section
+      id="analyzer"
+      className="py-20 min-h-screen bg-background relative overflow-hidden flex items-center"
+    >
+      {/* Full Background Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 pointer-events-none" />
+
       <div className="container mx-auto px-4 relative">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
+          
           {/* Left Content */}
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary/10 rounded-full text-secondary text-sm font-medium mb-6">
               <FileText className="w-4 h-4" />
               {t("analyzer.badge")}
             </div>
-            
+
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               {t("analyzer.title")}{" "}
-              <span className="text-secondary">{t("analyzer.audioGuidance")}</span>
+              <span className="text-secondary">
+                {t("analyzer.audioGuidance")}
+              </span>
             </h2>
-            
+
             <p className="text-lg text-muted-foreground mb-8">
               {t("analyzer.subtitle")}
             </p>
 
-            {/* Features Grid */}
+            {/* Features */}
             <div className="grid sm:grid-cols-2 gap-4 mb-8">
               {features.map((feature, index) => (
-                <div 
+                <div
                   key={index}
                   className="flex items-start gap-3 p-4 bg-muted/50 rounded-xl"
                 >
@@ -87,13 +93,18 @@ export function FormAnalyzerSection() {
                     {feature.icon}
                   </div>
                   <div>
-                    <h4 className="font-medium text-foreground mb-0.5">{feature.title}</h4>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    <h4 className="font-medium text-foreground mb-0.5">
+                      {feature.title}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {feature.description}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
 
+            {/* Buttons */}
             <div className="flex flex-wrap gap-3">
               <Button variant="saffron" size="lg">
                 <Upload className="w-5 h-5" />
@@ -106,17 +117,22 @@ export function FormAnalyzerSection() {
             </div>
           </div>
 
-          {/* Right - Interactive Demo */}
+          {/* Right Demo */}
           <div className="relative">
             <div className="bg-card rounded-3xl border border-border shadow-xl p-6 sm:p-8">
+
               {/* Upload Area */}
               <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center mb-6 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
                   <FileText className="w-8 h-8" />
                 </div>
-                <h4 className="font-semibold text-foreground mb-2">{t("analyzer.dropHere")}</h4>
+                <h4 className="font-semibold text-foreground mb-2">
+                  {t("analyzer.dropHere")}
+                </h4>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {language === "en" ? "or click to browse • PDF, JPG, PNG" : "या ब्राउज़ करने के लिए क्लिक करें • PDF, JPG, PNG"}
+                  {language === "en"
+                    ? "or click to browse • PDF, JPG, PNG"
+                    : "या ब्राउज़ करने के लिए क्लिक करें • PDF, JPG, PNG"}
                 </p>
                 <Button variant="outline" size="sm">
                   {t("analyzer.browseFiles")}
@@ -127,7 +143,9 @@ export function FormAnalyzerSection() {
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl mb-6">
                 <div className="flex items-center gap-3">
                   <Languages className="w-5 h-5 text-muted-foreground" />
-                  <span className="text-sm font-medium">{t("analyzer.audioLanguage")}</span>
+                  <span className="text-sm font-medium">
+                    {t("analyzer.audioLanguage")}
+                  </span>
                 </div>
                 <select className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
                   <option>हिंदी (Hindi)</option>
@@ -145,7 +163,7 @@ export function FormAnalyzerSection() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {sampleQuestions[language].map((question, index) => (
-                    <button 
+                    <button
                       key={index}
                       className="px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-sm text-foreground transition-colors"
                     >
@@ -157,7 +175,7 @@ export function FormAnalyzerSection() {
 
               {/* Audio Preview */}
               <div className="bg-primary/5 rounded-xl p-4 flex items-center gap-4">
-                <Button variant="default" size="icon" className="shrink-0">
+                <Button variant="default" size="icon">
                   <Volume2 className="w-5 h-5" />
                 </Button>
                 <div className="flex-1">
@@ -165,16 +183,21 @@ export function FormAnalyzerSection() {
                     <div className="h-full w-1/3 bg-primary rounded-full" />
                   </div>
                 </div>
-                <span className="text-sm text-muted-foreground">1:23 / 4:56</span>
+                <span className="text-sm text-muted-foreground">
+                  1:23 / 4:56
+                </span>
               </div>
             </div>
 
             {/* Floating Badge */}
-            <div className="absolute -bottom-4 -right-4 bg-accent text-accent-foreground px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 animate-float">
+            <div className="absolute -bottom-4 -right-4 bg-accent text-accent-foreground px-4 py-2 rounded-xl shadow-lg flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5" />
-              <span className="font-medium">{t("analyzer.accessible")}</span>
+              <span className="font-medium">
+                {t("analyzer.accessible")}
+              </span>
             </div>
           </div>
+
         </div>
       </div>
     </section>
