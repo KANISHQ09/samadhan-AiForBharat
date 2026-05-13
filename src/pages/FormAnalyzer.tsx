@@ -9,8 +9,8 @@ const FormAnalyzer = () => {
       <BackgroundPattern />
       <Header />
       <main className="pt-16">
-        <FormAnalyzerSection />
-        <AIAssistantSection />
+        <AnalyzerAndAssistant />
+        
       </main>
       <Footer />
     </div>
