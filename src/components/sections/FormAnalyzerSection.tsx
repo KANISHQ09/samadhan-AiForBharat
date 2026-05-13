@@ -26,12 +26,14 @@ const sampleQuestions = {
 };
 
 /* ---------------- MAIN COMPONENT ---------------- */
+type ChatMsg = { role: "user" | "assistant"; content: string };
+
 export function AnalyzerAndAssistant() {
   const { t, language } = useLanguage();
   const { toast } = useToast();
 
   /* ---------------- CHAT STATE ---------------- */
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<ChatMsg[]>([
     {
       role: "assistant",
       content:
