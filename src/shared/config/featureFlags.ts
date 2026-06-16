@@ -2,9 +2,9 @@ import { env } from "./environment";
 
 export const FEATURE_FLAGS = {
   AI_ASSISTANT: true,
-  FORM_ANALYZER: env.isDev,    // Mocked: enable in dev, hide in prod
-  DOCUMENT_LOCKER: env.isDev,  // Mocked: enable in dev, hide in prod
-  SCHEMES_ENGINE: env.isDev,   // Mocked: enable in dev, hide in prod
+  FORM_ANALYZER: true,    // Enabled in both dev & prod
+  DOCUMENT_LOCKER: true,  // Enabled in both dev & prod
+  SCHEMES_ENGINE: true,   // Enabled in both dev & prod
   NOTIFICATIONS: true,
 } as const;
 
