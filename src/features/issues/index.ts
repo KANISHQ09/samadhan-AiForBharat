@@ -4,3 +4,5 @@ export { issueService } from "./services/issueService";
 export { issueRepository } from "./repositories/issueRepository";
 export { useReportIssue } from "./hooks/useReportIssue";
 export { default as ReportIssuePage } from "./pages/ReportIssuePage";
+export { visionService } from "./services/visionService";
+

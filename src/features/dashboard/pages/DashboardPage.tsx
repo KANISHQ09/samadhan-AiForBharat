@@ -267,7 +267,7 @@ function IssueCard({
             ) : (
               <ThumbsUp className={`w-4 h-4 ${isSupported ? "fill-current" : ""}`} />
             )}
-            {language === "en" ? "Support" : "समर्थन"} ({issue.supportsCount})
+            {activeLanguage === "en" ? "Support" : "समर्थन"} ({issue.supportsCount})
           </Button>
         </div>
       </div>

@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useLanguage } from "@/app/providers/LanguageProvider";
 import { useAuth } from "@/features/auth";
 import { useProfileData } from "../hooks/useProfileData";
@@ -53,11 +54,21 @@ export default function ProfilePage() {
   const { user, signOut } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const activeTab = searchParams.get("tab") || "profile";
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
+
+  const [subTab, setSubTab] = useState<"reported" | "supported">("reported");
 
   const {
     profile,
     setProfile,
     issues,
+    supportedIssues,
     notifications,
     loading,
     saving,
@@ -97,7 +108,7 @@ export default function ProfilePage() {
           </Button>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile" className="gap-2">
               <User className="w-4 h-4" />
@@ -225,71 +236,155 @@ export default function ProfilePage() {
           {/* Issues Tab */}
           <TabsContent value="issues">
             <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
-              {issues.length === 0 ? (
-                <EmptyState
-                  title={language === "en" ? "No Issues Reported" : "कोई समस्या दर्ज नहीं"}
-                  description={
-                    language === "en" 
-                      ? "You haven't reported any civic issues yet." 
-                      : "आपने अभी तक कोई नागरिक समस्या दर्ज नहीं की है।"
-                  }
-                  actionText={language === "en" ? "Report an Issue" : "समस्या दर्ज करें"}
-                  onAction={() => navigate(ROUTES.REPORT_ISSUE)}
-                />
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-foreground">
-                      {language === "en" ? `${issues.length} Issues` : `${issues.length} समस्याएं`}
-                    </h3>
-                    <Button size="sm" onClick={() => navigate(ROUTES.REPORT_ISSUE)}>
-                      {language === "en" ? "Report New" : "नई रिपोर्ट"}
-                    </Button>
-                  </div>
-                  
-                  {issues.map((issue) => {
-                    const status = statusConfig[issue.status] || statusConfig[IssueStatus.REPORTED];
-                    const localizedLabel = STATUS_LABELS[issue.status]?.[language] || issue.status;
-                    return (
-                      <div 
-                        key={issue.id}
-                        className="p-4 bg-muted/50 rounded-xl hover:bg-muted transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {issue.category}
-                              </Badge>
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${status.class}`}>
-                                {status.icon}
-                                {localizedLabel}
-                              </span>
+              {/* Sub-tabs / Pills for Reported vs Supported */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-border pb-4 mb-6 gap-4">
+                <div className="flex bg-muted p-1 rounded-xl w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSubTab("reported")}
+                    className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                      subTab === "reported"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {language === "en" ? `Reported (${issues.length})` : `दर्ज की गई (${issues.length})`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSubTab("supported")}
+                    className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                      subTab === "supported"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {language === "en" ? `Supported (${supportedIssues.length})` : `समर्थित (${supportedIssues.length})`}
+                  </button>
+                </div>
+                <Button size="sm" onClick={() => navigate(ROUTES.REPORT_ISSUE)} className="w-full sm:w-auto">
+                  {language === "en" ? "Report New" : "नई रिपोर्ट"}
+                </Button>
+              </div>
+
+              {subTab === "reported" ? (
+                issues.length === 0 ? (
+                  <EmptyState
+                    title={language === "en" ? "No Issues Reported" : "कोई समस्या दर्ज नहीं"}
+                    description={
+                      language === "en" 
+                        ? "You haven't reported any civic issues yet." 
+                        : "आपने अभी तक कोई नागरिक समस्या दर्ज नहीं की है।"
+                    }
+                    actionText={language === "en" ? "Report an Issue" : "समस्या दर्ज करें"}
+                    onAction={() => navigate(ROUTES.REPORT_ISSUE)}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {issues.map((issue) => {
+                      const status = statusConfig[issue.status] || statusConfig[IssueStatus.REPORTED];
+                      const localizedLabel = STATUS_LABELS[issue.status]?.[language] || issue.status;
+                      return (
+                        <div 
+                          key={issue.id}
+                          className="p-4 bg-muted/50 rounded-xl hover:bg-muted transition-colors cursor-pointer"
+                          onClick={() => navigate(`${ROUTES.DASHBOARD}?issueId=${issue.id}`)}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {issue.category}
+                                </Badge>
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${status.class}`}>
+                                  {status.icon}
+                                  {localizedLabel}
+                                </span>
+                              </div>
+                              <h4 className="font-medium text-foreground mb-1">
+                                {issue.title}
+                              </h4>
+                              {issue.location && (
+                                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {issue.location}
+                                </p>
+                              )}
                             </div>
-                            <h4 className="font-medium text-foreground mb-1">
-                              {issue.title}
-                            </h4>
-                            {issue.location && (
-                              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                {issue.location}
+                            <div className="text-right text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1 justify-end">
+                                <Clock className="w-3 h-3" />
+                                {new Date(issue.createdAt).toLocaleDateString()}
+                              </div>
+                              <p className="text-xs mt-1">
+                                {issue.supportsCount} {language === "en" ? "supports" : "समर्थन"}
                               </p>
-                            )}
-                          </div>
-                          <div className="text-right text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {new Date(issue.createdAt).toLocaleDateString()}
                             </div>
-                            <p className="text-xs mt-1">
-                              {issue.supportsCount} {language === "en" ? "supports" : "समर्थन"}
-                            </p>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )
+              ) : (
+                supportedIssues.length === 0 ? (
+                  <EmptyState
+                    title={language === "en" ? "No Supported Issues" : "कोई समर्थित समस्या नहीं"}
+                    description={
+                      language === "en" 
+                        ? "You haven't supported or upvoted any issues yet." 
+                        : "आपने अभी तक किसी समस्या का समर्थन या वोट नहीं किया है।"
+                    }
+                    actionText={language === "en" ? "Browse Issues" : "समस्याएं देखें"}
+                    onAction={() => navigate(ROUTES.DASHBOARD)}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {supportedIssues.map((issue) => {
+                      const status = statusConfig[issue.status] || statusConfig[IssueStatus.REPORTED];
+                      const localizedLabel = STATUS_LABELS[issue.status]?.[language] || issue.status;
+                      return (
+                        <div 
+                          key={issue.id}
+                          className="p-4 bg-muted/50 rounded-xl hover:bg-muted transition-colors cursor-pointer"
+                          onClick={() => navigate(`${ROUTES.DASHBOARD}?issueId=${issue.id}`)}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {issue.category}
+                                </Badge>
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${status.class}`}>
+                                  {status.icon}
+                                  {localizedLabel}
+                                </span>
+                              </div>
+                              <h4 className="font-medium text-foreground mb-1">
+                                {issue.title}
+                              </h4>
+                              {issue.location && (
+                                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {issue.location}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1 justify-end">
+                                <Clock className="w-3 h-3" />
+                                {new Date(issue.createdAt).toLocaleDateString()}
+                              </div>
+                              <p className="text-xs mt-1">
+                                {issue.supportsCount} {language === "en" ? "supports" : "समर्थन"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
               )}
             </div>
           </TabsContent>

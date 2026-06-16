@@ -36,6 +36,7 @@ export const adminRepository = {
     const { data, error } = await supabase
       .from("reported_issues")
       .select("*")
+      .is("master_issue_id", null)
       .order("created_at", { ascending: false });
 
     if (error) throw new APIError(error.message, undefined, error);

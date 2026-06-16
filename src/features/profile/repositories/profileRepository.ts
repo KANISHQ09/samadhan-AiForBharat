@@ -8,9 +8,22 @@ export const profileRepository = {
       .from("profiles")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) throw new APIError(error.message, undefined, error);
+    
+    if (!data) {
+      // Auto-create profile if missing
+      const { data: inserted, error: insertError } = await supabase
+        .from("profiles")
+        .insert({ user_id: userId, full_name: "User" })
+        .select()
+        .single();
+        
+      if (insertError) throw new APIError(insertError.message, undefined, insertError);
+      return inserted as ProfileResponse;
+    }
+    
     return data as ProfileResponse;
   },
 
@@ -31,9 +44,22 @@ export const profileRepository = {
       .from("notification_preferences")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) throw new APIError(error.message, undefined, error);
+    
+    if (!data) {
+      // Auto-create notification preferences if missing
+      const { data: inserted, error: insertError } = await supabase
+        .from("notification_preferences")
+        .insert({ user_id: userId })
+        .select()
+        .single();
+        
+      if (insertError) throw new APIError(insertError.message, undefined, insertError);
+      return inserted;
+    }
+    
     return data;
   },
 

@@ -94,10 +94,20 @@ export function AuthForm() {
           return;
         }
 
-        await authService.signIn({
+        const signInResult = await authService.signIn({
           email: validation.data.email,
           password: validation.data.password,
         });
+
+        let isAdmin = false;
+        if (signInResult?.user) {
+          try {
+            const { adminService } = await import("@/features/admin/services/adminService");
+            isAdmin = await adminService.checkIsAdmin(signInResult.user.id);
+          } catch (e) {
+            logger.error("Failed to check admin status on sign in:", e);
+          }
+        }
 
         toast({
           title: language === "en" ? "Welcome back!" : "वापस स्वागत है!",
@@ -105,7 +115,12 @@ export function AuthForm() {
             ? "You have successfully signed in." 
             : "आपने सफलतापूर्वक साइन इन कर लिया है।",
         });
-        navigate(ROUTES.DASHBOARD);
+
+        if (isAdmin) {
+          navigate(ROUTES.ADMIN);
+        } else {
+          navigate(ROUTES.DASHBOARD);
+        }
       }
     } catch (error: any) {
       logger.error("Authentication action failed:", error);

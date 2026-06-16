@@ -10,6 +10,7 @@ export interface IssueResponse {
   status: string;
   image_urls: string[] | null;
   supports_count: number | null;
+  master_issue_id?: string | null;
   created_at: string;
   updated_at: string;
 }

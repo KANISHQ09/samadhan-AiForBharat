@@ -11,5 +11,6 @@ export interface Issue {
   status: IssueStatus;
   imageUrls: string[];
   supportsCount: number;
+  masterIssueId?: string | null;
   createdAt: Date;
 }

@@ -108,7 +108,7 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
             >
               <Globe className="w-4 h-4" />
               <span className="text-xs font-medium">
-                {language === "en" ? "हिंदी" : "English"}
+                {language === "en" ? "English" : "हिंदी"}
               </span>
             </Button>
 
@@ -224,6 +224,22 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                       <User className="w-5 h-5" />
                       {language === "en" ? "My Profile" : "मेरी प्रोफ़ाइल"}
                     </Link>
+                    <Link
+                      to={`${ROUTES.PROFILE}?tab=issues`}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <FileText className="w-5 h-5" />
+                      {language === "en" ? "My Issues" : "मेरी समस्याएं"}
+                    </Link>
+                    <Link
+                      to={`${ROUTES.PROFILE}?tab=notifications`}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Bell className="w-5 h-5" />
+                      {language === "en" ? "Notifications" : "अधिसूचनाएं"}
+                    </Link>
                     <button
                       onClick={() => {
                         handleSignOut();
@@ -264,7 +280,7 @@ export const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>
                   className="w-full justify-start gap-3"
                 >
                   <Globe className="w-5 h-5" />
-                  {language === "en" ? "हिंदी में बदलें" : "Switch to English"}
+                  {language === "en" ? "English" : "हिंदी"}
                 </Button>
               </div>
             </div>

@@ -154,12 +154,19 @@ export const translations: Translations = {
   "footer.tagline": { en: "Empowering citizens through technology", hi: "प्रौद्योगिकी के माध्यम से नागरिकों को सशक्त बनाना" },
   "footer.quickLinks": { en: "Quick Links", hi: "त्वरित लिंक" },
   "footer.resources": { en: "Resources", hi: "संसाधन" },
+  "footer.departments": { en: "Gov. Departments", hi: "सरकारी विभाग" },
   "footer.helpCenter": { en: "Help Center", hi: "सहायता केंद्र" },
   "footer.faqs": { en: "FAQs", hi: "अक्सर पूछे जाने वाले प्रश्न" },
   "footer.contactUs": { en: "Contact Us", hi: "संपर्क करें" },
   "footer.privacyPolicy": { en: "Privacy Policy", hi: "गोपनीयता नीति" },
   "footer.terms": { en: "Terms of Service", hi: "सेवा की शर्तें" },
   "footer.rights": { en: "All rights reserved.", hi: "सर्वाधिकार सुरक्षित।" },
+  "footer.dept.mohua": { en: "Min. of Housing & Urban Affairs", hi: "आवास एवं नगर कार्य मंत्रालय" },
+  "footer.dept.jalshakti": { en: "Min. of Jal Shakti", hi: "जल शक्ति मंत्रालय" },
+  "footer.dept.power": { en: "Min. of Power", hi: "विद्युत मंत्रालय" },
+  "footer.dept.roads": { en: "Min. of Road Transport", hi: "सड़क परिवहन मंत्रालय" },
+  "footer.dept.meity": { en: "Min. of Electronics & IT", hi: "इलेक्ट्रॉनिक्स एवं IT मंत्रालय" },
+  "footer.dept.panchayat": { en: "Min. of Panchayati Raj", hi: "पंचायती राज मंत्रालय" },
 };
 
 interface LanguageContextType {

@@ -28,6 +28,7 @@ export const issueService = {
       status,
       imageUrls: raw.image_urls || [],
       supportsCount: raw.supports_count || 0,
+      masterIssueId: raw.master_issue_id || null,
       createdAt: new Date(raw.created_at),
     };
   },

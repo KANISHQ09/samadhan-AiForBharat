@@ -50,6 +50,10 @@ export default function ReportIssuePage() {
     detectedClasses,
     handleImageChange,
     handleSubmit,
+    // Voice
+    isRecording,
+    interimTranscript,
+    toggleVoice,
   } = useReportIssue(user, language);
 
   return (
@@ -194,18 +198,39 @@ export default function ReportIssuePage() {
           </div>
 
           {/* Voice Description */}
-          <div className="bg-muted/50 rounded-xl p-4 flex items-center justify-between">
-            <div>
-              <p className="font-medium text-sm">
-                {language === "en" ? "Or describe by voice" : "या आवाज से बताएं"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {language === "en" ? "Tap to record your issue description" : "समस्या का विवरण रिकॉर्ड करने के लिए टैप करें"}
-              </p>
+          <div className={`rounded-xl p-4 border-2 transition-all ${
+            isRecording
+              ? "bg-destructive/5 border-destructive/40"
+              : "bg-muted/50 border-transparent"
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="font-medium text-sm">
+                  {language === "en" ? "Or describe by voice" : "या आवाज़ से बताएं"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {isRecording
+                    ? (language === "en" ? "Listening... tap to stop" : "सुन रहे हैं... रोकने के लिए टैप करें")
+                    : (language === "en" ? "Tap to record your issue description" : "समस्या का विवरण रिकॉर्ड करने के लिए टैप करें")}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant={isRecording ? "destructive" : "outline"}
+                size="icon"
+                onClick={toggleVoice}
+                className={isRecording ? "animate-pulse" : ""}
+                aria-label={isRecording ? "Stop recording" : "Start voice recording"}
+              >
+                <Mic className="w-5 h-5" />
+              </Button>
             </div>
-            <Button type="button" variant="outline" size="icon">
-              <Mic className="w-5 h-5" />
-            </Button>
+            {/* Interim transcript preview */}
+            {isRecording && interimTranscript && (
+              <p className="text-sm text-muted-foreground italic mt-1 px-1">
+                &ldquo;{interimTranscript}&rdquo;
+              </p>
+            )}
           </div>
 
           {/* Submit */}

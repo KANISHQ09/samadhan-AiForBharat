@@ -14,6 +14,7 @@ export function useProfileData(user: User | null, activeLanguage: "en" | "hi") {
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [supportedIssues, setSupportedIssues] = useState<Issue[]>([]);
   const [notifications, setNotifications] = useState<NotificationPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -27,24 +28,42 @@ export function useProfileData(user: User | null, activeLanguage: "en" | "hi") {
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
+    
+    // Fetch Profile
     try {
-      // Fetch Profile
       const prof = await profileService.getProfile(user.id);
       setProfile(prof);
+    } catch (err) {
+      logger.error("Failed to fetch profile:", err);
+    }
 
-      // Fetch user reported issues
+    // Fetch user reported issues
+    try {
       const rawIssues = await issueRepository.fetchUserIssues(user.id);
       const mappedIssues = rawIssues.map((item) => issueService.mapResponseToDomain(item));
       setIssues(mappedIssues);
+    } catch (err) {
+      logger.error("Failed to fetch user issues:", err);
+    }
 
-      // Fetch notifications
+    // Fetch user supported issues
+    try {
+      const rawSupported = await issueRepository.fetchUserSupportedIssues(user.id);
+      const mappedSupported = rawSupported.map((item) => issueService.mapResponseToDomain(item));
+      setSupportedIssues(mappedSupported);
+    } catch (err) {
+      logger.error("Failed to fetch supported issues:", err);
+    }
+
+    // Fetch notifications
+    try {
       const notifs = await profileService.getNotificationPreferences(user.id);
       setNotifications(notifs);
     } catch (err) {
-      logger.error("Failed to fetch profile data:", err);
-    } finally {
-      setLoading(false);
+      logger.error("Failed to fetch notification preferences:", err);
     }
+
+    setLoading(false);
   };
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -120,6 +139,7 @@ export function useProfileData(user: User | null, activeLanguage: "en" | "hi") {
     profile,
     setProfile,
     issues,
+    supportedIssues,
     notifications,
     loading,
     saving,

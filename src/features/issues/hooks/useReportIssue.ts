@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/shared/hooks/use-toast";
 import { reportIssueSchema } from "../validation/reportIssueSchema";
 import { issueService } from "../services/issueService";
-import { aiService } from "@/features/ai-assistant";
+import { visionService } from "../services/visionService";
 import { logger } from "@/shared/services/logger";
 import { ROUTES } from "@/shared/config/routes";
 import { validateFileSignature } from "@/shared/validation/magicBytes";
+import { voiceService } from "@/shared/services/voiceService";
 
 const detectionToCategory = (cls: string): string | null => {
   const c = cls.toLowerCase();
@@ -32,6 +33,10 @@ export function useReportIssue(user: User | null, activeLanguage: "en" | "hi") {
   const [annotatedImage, setAnnotatedImage] = useState<string | null>(null);
   const [detecting, setDetecting] = useState(false);
   const [detectedClasses, setDetectedClasses] = useState<string[]>([]);
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState("");
+  const stopListeningRef = useRef<(() => void) | null>(null);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,15 +89,22 @@ export function useReportIssue(user: User | null, activeLanguage: "en" | "hi") {
 
       setDetecting(true);
       try {
-        const result = await aiService.detectIssue(base64);
+        const result = await visionService.analyseImage({
+          base64Image: base64,
+          mimeType: file.type as any,
+        });
         if (result.classes.length) {
           setDetectedClasses(result.classes);
-          if (result.annotatedImage) setAnnotatedImage(`data:image/jpeg;base64,${result.annotatedImage}`);
+          if (result.annotatedImage) {
+            setAnnotatedImage(`data:image/jpeg;base64,${result.annotatedImage}`);
+          }
           const mapped = detectionToCategory(result.top);
           if (mapped) setSelectedCategory(mapped);
           toast({
             title: activeLanguage === "en" ? "Detection complete" : "पहचान पूर्ण",
-            description: `${activeLanguage === "en" ? "Detected" : "पाया गया"}: ${result.classes.join(", ")}`,
+            description: activeLanguage === "en"
+              ? `Detected: ${result.classes.join(", ")} (Severity: ${result.severityLabel.toUpperCase()})`
+              : `पाया गया: ${result.classes.join(", ")} (तीव्रता: ${result.severityLabel.toUpperCase()})`,
           });
         } else {
           toast({
@@ -113,6 +125,68 @@ export function useReportIssue(user: User | null, activeLanguage: "en" | "hi") {
     };
     reader.readAsDataURL(file);
   };
+
+  /**
+   * Toggles voice recognition on/off.
+   * When turned on: starts listening and appends the final transcript to description.
+   * When turned off: stops the recognition session.
+   */
+  const toggleVoice = useCallback(() => {
+    if (isRecording) {
+      // Stop recording
+      stopListeningRef.current?.();
+      stopListeningRef.current = null;
+      setIsRecording(false);
+      setInterimTranscript("");
+      return;
+    }
+
+    if (!voiceService.isSupported()) {
+      toast({
+        title: activeLanguage === "en" ? "Not Supported" : "समर्थित नहीं",
+        description:
+          activeLanguage === "en"
+            ? "Voice input is not supported in this browser. Please use Chrome or Edge."
+            : "इस ब्राउज़र में वॉइस इनपुट समर्थित नहीं है। कृपया Chrome या Edge का उपयोग करें।",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsRecording(true);
+    setInterimTranscript("");
+
+    const stop = voiceService.startListening({
+      language: activeLanguage,
+      onTranscript: (text, isFinal) => {
+        if (isFinal) {
+          // Append final result to description with a space separator
+          setDescription((prev) =>
+            prev ? `${prev.trimEnd()} ${text}` : text
+          );
+          setInterimTranscript("");
+        } else {
+          setInterimTranscript(text);
+        }
+      },
+      onError: (errorMsg) => {
+        logger.error("Voice recognition error:", errorMsg);
+        toast({
+          title: activeLanguage === "en" ? "Voice Error" : "वॉइस त्रुटि",
+          description: errorMsg,
+          variant: "destructive",
+        });
+        setIsRecording(false);
+        setInterimTranscript("");
+      },
+      onEnd: () => {
+        setIsRecording(false);
+        setInterimTranscript("");
+      },
+    });
+
+    stopListeningRef.current = stop;
+  }, [isRecording, activeLanguage, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,7 +225,7 @@ export function useReportIssue(user: User | null, activeLanguage: "en" | "hi") {
     try {
       await issueService.reportNewIssue(
         user.id,
-        validationResult.data,
+        validationResult.data as { title: string; description: string; category: string; location: string },
         imageFile,
         activeLanguage
       );
@@ -193,5 +267,9 @@ export function useReportIssue(user: User | null, activeLanguage: "en" | "hi") {
     detectedClasses,
     handleImageChange,
     handleSubmit,
+    // Voice
+    isRecording,
+    interimTranscript,
+    toggleVoice,
   };
 }

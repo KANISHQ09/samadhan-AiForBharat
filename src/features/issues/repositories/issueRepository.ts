@@ -107,6 +107,23 @@ export const issueRepository = {
     return data as SupportResponse[];
   },
 
+  async fetchUserSupportedIssues(userId: string): Promise<IssueResponse[]> {
+    const { data, error } = await supabase
+      .from("issue_supports")
+      .select("reported_issues(*)")
+      .eq("user_id", userId);
+
+    if (error) throw new APIError(error.message, undefined, error);
+    
+    const rawList = (data || []) as any[];
+    const issues = rawList
+      .map((item) => item.reported_issues)
+      .filter((issue) => !!issue);
+
+    return issues as IssueResponse[];
+  },
+
+
   async addSupport(issueId: string, userId: string): Promise<SupportResponse> {
     const { data, error } = await supabase
       .from("issue_supports")

@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Environment variables - never commit secrets!
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.staging
+# .env.example is intentionally NOT ignored (safe template)
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -20,5 +29,22 @@ dist-ssr
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
 *.sw?
+
+# Ignore all markdown files
+*.md
+**/*.md
+
+# Except README.md
+!/README.md
+
+# Python virtual environments & cache files
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+
