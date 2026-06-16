@@ -77,4 +77,9 @@ export const issueService = {
       return 1;
     }
   },
+
+  async getIssueById(issueId: string): Promise<Issue> {
+    const raw = await issueRepository.fetchIssueById(issueId);
+    return this.mapResponseToDomain(raw);
+  },
 };

@@ -17,6 +17,17 @@ export const issueRepository = {
     return data as IssueResponse[];
   },
 
+  async fetchIssueById(issueId: string): Promise<IssueResponse> {
+    const { data, error } = await supabase
+      .from("reported_issues")
+      .select("*")
+      .eq("id", issueId)
+      .single();
+
+    if (error) throw new APIError(error.message, undefined, error);
+    return data as IssueResponse;
+  },
+
   async fetchUserIssues(userId: string): Promise<IssueResponse[]> {
     const { data, error } = await supabase
       .from("reported_issues")
