@@ -4,28 +4,22 @@ import { checkRateLimit } from "../shared/edge/middleware/rateLimit.ts";
 import { logSecurityEvent } from "../shared/edge/services/securityLogger.ts";
 import { scanForPromptInjection, sanitizeInput } from "../shared/edge/ai/guardrails.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
 
-const SYSTEM_PROMPT = `You are Samadhan AI, a helpful civic governance assistant for Indian citizens. You specialize in:
+const NVIDIA_BASE = "https://integrate.api.nvidia.com/v1";
+const EMBED_MODEL  = "nvidia/llama-nemotron-embed-1b-v2";
 
-1. **Civic Issues**: Help users understand how to report civic problems (roads, water, electricity, sanitation), track their status, and escalate issues appropriately.
+const SYSTEM_PROMPT = `You are Samadhan AI, a strict RAG-based civic governance assistant for Indian citizens. Your primary purpose is to help citizens with queries regarding official Indian government forms, welfare schemes, and civic documents in our database.
 
-2. **Government Schemes**: Provide accurate information about central and state government schemes like PM Kisan, Ayushman Bharat, PM Awas Yojana, MGNREGA, etc. Explain eligibility criteria, benefits, and application processes.
+Strict Grounding and Out-of-Context Policies:
+1. **Strict Context Constraints**: You are provided with verified context chunks containing government information. You must ONLY answer the user's query if it can be directly and accurately answered from the provided context.
+2. **Refusing Off-Topic / General Queries**: If the provided context is empty, or if the user's query is out-of-context (e.g. general chat, jokes, coding, maths, general science, international queries, general life advice, cooking recipes, or off-topic questions), you MUST politely refuse to answer. You should reply with exactly this response:
+   - In English: "I am sorry, but I can only answer queries related to the official Indian government forms, schemes, and documents in my knowledge base. Please ask a relevant query."
+   - In Hindi: "मुझे क्षमा करें, मैं केवल मेरे ज्ञानकोश में उपलब्ध आधिकारिक भारतीय सरकारी फॉर्मों, योजनाओं और दस्तावेजों से संबंधित प्रश्नों के उत्तर दे सकता हूँ। कृपया कोई प्रासंगिक प्रश्न पूछें।"
+3. **No Hallucination**: Do not invent facts, URLs, contacts, or criteria. If the retrieved context is insufficient to answer the query, say that you cannot find the verified details in the knowledge base.
+4. **General Conversation**: You may respond politely to standard greetings (like "hello", "hi", "namaste"), but always redirect the user back to asking about civic schemes and forms.
 
-3. **Form Assistance**: Help users understand government forms, explain required documents, and guide them through filling applications.
-
-4. **Document Guidance**: Advise on important documents (Aadhaar, PAN, Voter ID, Income Certificate, Caste Certificate, etc.) - how to apply, renew, or correct them.
-
-Guidelines:
-- Be warm, patient, and accessible - many users may not be tech-savvy
-- Support both Hindi and English naturally in conversation (code-mixing is fine)
-- Provide step-by-step guidance when explaining processes
-- Always verify policy information and mention if something might have changed recently
-- For complex queries, break down information into digestible parts
-- If asked about something outside your scope, politely redirect to appropriate resources
-- Never provide legal advice - recommend consulting lawyers for legal matters
-- Be culturally sensitive and respectful of Indian customs and diversity
-
-Start responses naturally without unnecessary greetings in follow-up messages. Be concise but thorough.`;
+Start responses directly and concisely without unnecessary introductions.`;
 
 // Zod schemas for validation
 const messageSchema = z.object({
@@ -138,6 +132,56 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 6. RAG Retrieval via Vector Search (NVIDIA Embeddings + PostgreSQL match_global_chunks)
+    let contextText = "";
+    if (lastUserMessage) {
+      const nvidiaKey = Deno.env.get("NVIDIA_NIM_API_KEY");
+      if (nvidiaKey) {
+        try {
+          const embedResponse = await fetch(`${NVIDIA_BASE}/embeddings`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${nvidiaKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: EMBED_MODEL,
+              input: [lastUserMessage.content],
+              input_type: "query",
+              truncate: "END"
+            })
+          });
+
+          if (embedResponse.ok) {
+            const embedData = await embedResponse.json();
+            const queryEmbedding = embedData.data[0].embedding.slice(0, 1024);
+
+            const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
+            const supabase = createClient(supabaseUrl!, supabaseServiceKey!, {
+              auth: { persistSession: false }
+            });
+
+            const { data: chunks, error: chunkError } = await supabase
+              .rpc("match_global_chunks", {
+                query_embedding: queryEmbedding,
+                match_threshold: 0.30,
+                match_count: 5
+              });
+
+            if (!chunkError && chunks && chunks.length > 0) {
+              contextText = chunks
+                .map((c: any) => `Source Form/Scheme: ${c.chunk_title}\nContent:\n${c.chunk_content}`)
+                .join("\n\n---\n\n");
+            }
+          } else {
+            console.error("Embedding request failed:", embedResponse.status, await embedResponse.text());
+          }
+        } catch (err) {
+          console.error("RAG retrieval failed inside chat function:", err);
+        }
+      }
+    }
+
     // Map messages to Gemini structure (role 'assistant' maps to 'model')
     const geminiMessages = messages
       .filter((m: any) => m.role !== "system")
@@ -157,7 +201,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         contents: geminiMessages,
         systemInstruction: {
-          parts: [{ text: SYSTEM_PROMPT }],
+          parts: [{ text: `${SYSTEM_PROMPT}\n\nVERIFIED CONTEXT CHUNKS:\n${contextText || "NO CONTEXT CHUNKS FOUND."}` }],
         },
       }),
     });
