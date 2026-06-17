@@ -1,6 +1,6 @@
 import { Button } from "@/shared/components/ui/button";
 import { useLanguage } from "@/app/providers/LanguageProvider";
-import { 
+import {
   FileText, Upload, Mic, Volume2, MessageSquare,
   CheckCircle2, Sparkles, Languages, HelpCircle,
   Bot, User, Send, Loader2, MicOff, AlertCircle,
@@ -40,6 +40,167 @@ const supportedFormsList = [
   { code: "INCOME-CERT", name: "Income Certificate (State)" }
 ];
 
+function VerificationReport({ result, language }: { result: any; language: string }) {
+  if (!result) return null;
+
+  const isGov = result.isGovernmentRelated;
+  const auth = result.authenticity || "not_applicable";
+  const authReason = result.authenticityReason || "";
+  const visual = result.visualAnalysis || "";
+  const docType = result.documentType || "unknown";
+  const confidence = result.confidence || 0;
+
+  // Visual formatting details
+  let authBadgeBg = "bg-slate-500/10 border-slate-500/20 text-slate-500";
+  let authBadgeLabel = language === "hi" ? "अपरिभाषित" : "Undefined";
+  let authIcon = <HelpCircle className="w-4 h-4" />;
+
+  switch (auth) {
+    case "original":
+      authBadgeBg = "bg-emerald-500/10 border-emerald-500/25 text-emerald-600 dark:text-emerald-400";
+      authBadgeLabel = language === "hi" ? "मूल / प्रामाणिक" : "Original / Authentic";
+      authIcon = <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
+      break;
+    case "fake":
+      authBadgeBg = "bg-red-500/10 border-red-500/25 text-red-600 dark:text-red-400";
+      authBadgeLabel = language === "hi" ? "फर्जी / जाली" : "Counterfeit / Falsified";
+      authIcon = <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />;
+      break;
+    case "sample_or_template":
+      authBadgeBg = "bg-indigo-500/10 border-indigo-500/25 text-indigo-600 dark:text-indigo-400";
+      authBadgeLabel = language === "hi" ? "खाली फॉर्म / नमूना प्रति" : "Blank Template / Sample Copy";
+      authIcon = <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />;
+      break;
+    case "suspicious":
+      authBadgeBg = "bg-amber-500/10 border-amber-500/25 text-amber-600 dark:text-amber-400";
+      authBadgeLabel = language === "hi" ? "संदेहास्पद / छेड़छाड़ के संकेत" : "Suspicious / Potential Edits";
+      authIcon = <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      break;
+    case "not_applicable":
+      authBadgeBg = "bg-zinc-500/10 border-zinc-500/25 text-zinc-500";
+      authBadgeLabel = language === "hi" ? "लागू नहीं" : "Not Applicable";
+      authIcon = <HelpCircle className="w-4 h-4 text-zinc-500" />;
+      break;
+  }
+
+  // Document type label
+  const getDocTypeLabel = (type: string) => {
+    const typesMap: Record<string, { en: string; hi: string }> = {
+      application_form: { en: "Official Application Form", hi: "आधिकारिक आवेदन पत्र" },
+      id_card: { en: "Government Identity Card", hi: "सरकारी पहचान पत्र" },
+      receipt: { en: "Receipt / Invoice", hi: "रसीद / इनवॉइस" },
+      utility_bill: { en: "Utility Bill", hi: "उपयोगिता बिल (बिजली/पानी)" },
+      certificate: { en: "Official Certificate", hi: "आधिकारिक प्रमाणपत्र" },
+      photograph: { en: "Scenery / Photograph", hi: "चित्र / फोटोग्राफ" },
+      artwork: { en: "Illustration / Artwork", hi: "चित्रण / कलाकृति" },
+      screenshot_non_document: { en: "General Screenshot", hi: "सामान्य स्क्रीनशॉट" },
+      other_document: { en: "Other Document Sheet", hi: "अन्य दस्तावेज़ शीट" },
+      empty_canvas: { en: "Blank/Empty Canvas", hi: "खाली कैनवास" },
+      unknown: { en: "Unrecognized Visual", hi: "अपरिचित दृश्य" },
+    };
+    return typesMap[type]?.[language === "hi" ? "hi" : "en"] || type;
+  };
+
+  return (
+    <div className="bg-card/60 backdrop-blur-md rounded-2xl p-5 border border-border/60 shadow-lg space-y-4 text-left">
+      <div className="flex items-center justify-between border-b border-border/50 pb-3">
+        <h4 className="font-extrabold text-sm text-foreground uppercase tracking-wider flex items-center gap-1.5">
+          <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+          {language === "hi" ? "सत्यापन एवं गुणवत्ता ऑडिट रिपोर्ट" : "Verification & Quality Audit Report"}
+        </h4>
+        <span className="text-[10px] text-muted-foreground bg-muted/80 px-2 py-0.5 rounded-full font-mono">
+          Model: Llama-3.2-Vision
+        </span>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Left Side indicators */}
+        <div className="space-y-3">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {language === "hi" ? "सरकारी दस्तावेज संबंध:" : "Government Related:"}
+            </span>
+            <div className="flex items-center gap-2">
+              {isGov ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400">
+                  <Check className="w-3.5 h-3.5" />
+                  {language === "hi" ? "सरकारी सामग्री पाई गई" : "Government Document Detected"}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 border border-rose-500/25 text-rose-600 dark:text-rose-400">
+                  <X className="w-3.5 h-3.5" />
+                  {language === "hi" ? "गैर-सरकारी / निजी सामग्री" : "Non-Government / Private"}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {language === "hi" ? "दस्तावेज़ प्रकार:" : "Document Category:"}
+            </span>
+            <p className="text-sm font-semibold text-foreground/90">
+              {getDocTypeLabel(docType)}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {language === "hi" ? "ऑडिट सटीकता / विश्वास:" : "Audit Accuracy (Confidence):"}
+            </span>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 bg-muted h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-primary h-full transition-all duration-350 rounded-full"
+                  style={{ width: `${confidence * 100}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold text-primary">{(confidence * 100).toFixed(0)}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side description */}
+        <div className="space-y-3 border-t md:border-t-0 md:border-l border-border/50 pt-3 md:pt-0 md:pl-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {language === "hi" ? "प्रामाणिकता स्थिति:" : "Authenticity Status:"}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${authBadgeBg}`}>
+                {authIcon}
+                {authBadgeLabel}
+              </span>
+            </div>
+          </div>
+
+          {authReason && (
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {language === "hi" ? "सत्यापन विवरण:" : "Verification Details:"}
+              </span>
+              <p className="text-xs text-foreground/80 leading-relaxed italic bg-background/40 p-2 rounded-lg border border-border/40 font-medium">
+                {authReason}
+              </p>
+            </div>
+          )}
+
+          {visual && (
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {language === "hi" ? "दृश्य विश्लेषण:" : "Visual Inspection:"}
+              </span>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                {visual}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AnalyzerAndAssistant() {
   const { t, language } = useLanguage();
   const { toast } = useToast();
@@ -48,7 +209,7 @@ export function AnalyzerAndAssistant() {
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
     {
       role: "assistant",
-      content: language === "hi" 
+      content: language === "hi"
         ? "नमस्ते! मैं आपके फॉर्म, सरकारी योजनाओं और अन्य नागरिक प्रश्नों में सहायता कर सकता हूँ।"
         : "Hello! I can help with forms, government schemes & queries.",
     },
@@ -261,16 +422,16 @@ export function AnalyzerAndAssistant() {
       }
 
       setStatus("classifying");
-      
+
       // Simulate pipeline transitions
       setTimeout(() => setStatus("retrieving"), 2000);
       setTimeout(() => setStatus("generating"), 3500);
 
       const result = await aiService.analyzeFormDirect(file, formQuery);
-      
+
       setStatus("done");
       setAnalysisResult(result);
-      
+
       if (result.status === "rejected") {
         setStatus("rejected");
       } else if (result.status === "low_confidence") {
@@ -354,16 +515,16 @@ export function AnalyzerAndAssistant() {
       // Do NOT call cancel() here if not speaking! Chrome has a bug where cancel() 
       // right before speak() causes speak() to be silently dropped.
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      
+
       // Voice selection
       const voices = window.speechSynthesis.getVoices();
       const targetLang = language === "hi" ? "hi-IN" : "en-US";
       const voice = voices.find(v => v.lang === targetLang) || voices.find(v => v.lang.startsWith(targetLang.split('-')[0])) || voices[0];
-      
+
       if (voice) {
         utterance.voice = voice;
       }
-      
+
       // Optional configuration for pacing
       utterance.rate = 0.9;
       utterance.pitch = 1;
@@ -390,7 +551,7 @@ export function AnalyzerAndAssistant() {
 
       console.log("[TTS] Calling speak() with target language:", targetLang);
       window.speechSynthesis.speak(utterance);
-      
+
     } catch (err: any) {
       console.error("[TTS] Exception in toggleSpeech:", err);
       setIsSpeaking(false);
@@ -408,14 +569,10 @@ export function AnalyzerAndAssistant() {
   }, []);
 
   return (
-    <section className="py-20 min-h-screen bg-background relative overflow-hidden">
-      {/* Dynamic Interactive BG */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 pointer-events-none" />
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl pointer-events-none" />
+    <section className="py-20 relative overflow-hidden">
 
       <div className="container mx-auto px-4 relative space-y-24">
-        
+
         {/* ================= FORM ANALYZER PANEL ================= */}
         <div>
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
@@ -432,10 +589,10 @@ export function AnalyzerAndAssistant() {
           </div>
 
           <div className="grid lg:grid-cols-12 gap-12 items-start">
-            
+
             {/* LEFT COLUMN: GUIDELINES & SUPPORTED LIST */}
             <div className="lg:col-span-5 space-y-8">
-              <div className="bg-card/40 backdrop-blur-md rounded-3xl p-8 border border-border/80 shadow-lg space-y-6">
+              <div className="bg-card rounded-3xl p-8 border border-border shadow-xl space-y-6">
                 <h3 className="text-2xl font-bold flex items-center gap-2">
                   <Info className="w-5 h-5 text-primary" />
                   {language === "hi" ? "निर्देश एवं दिशा-निर्देश" : "Guidelines & Instructions"}
@@ -478,26 +635,25 @@ export function AnalyzerAndAssistant() {
             <div className="lg:col-span-7 space-y-8">
               {/* UPLOAD ZONE CARD */}
               {status === "idle" || status === "uploading" || status === "error" || status === "rejected" || status === "low_confidence" || status === "unsupported_form" ? (
-                <div 
-                  className={`bg-card rounded-3xl p-8 border shadow-xl transition-all duration-300 relative ${
-                    dragActive ? "border-primary bg-primary/5 scale-[1.01]" : "border-border"
-                  }`}
+                <div
+                  className={`bg-card rounded-3xl p-8 border shadow-xl transition-all duration-300 relative ${dragActive ? "border-primary bg-primary/5 scale-[1.01]" : "border-border"
+                    }`}
                   onDragEnter={handleDrag}
                   onDragOver={handleDrag}
                   onDragLeave={handleDrag}
                   onDrop={handleDrop}
                 >
-                  <input 
-                    type="file" 
+                  <input
+                    type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
-                    className="hidden" 
+                    className="hidden"
                     accept="application/pdf,image/jpeg,image/png,image/webp"
                   />
 
                   {/* DROPZONE */}
                   {!file ? (
-                    <div 
+                    <div
                       onClick={() => fileInputRef.current?.click()}
                       className="border-dashed border-2 border-border rounded-2xl p-12 text-center cursor-pointer hover:border-primary/60 hover:bg-muted/40 transition-all duration-300"
                     >
@@ -528,15 +684,13 @@ export function AnalyzerAndAssistant() {
                             </p>
                           </div>
                         </div>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon" 
+                        <button
+                          type="button"
                           onClick={clearFile}
-                          className="text-muted-foreground hover:text-foreground rounded-full"
+                          className="text-muted-foreground hover:text-foreground rounded-full p-2 hover:bg-muted/80 transition-colors cursor-pointer relative z-[9999] pointer-events-auto"
                         >
                           <X className="w-5 h-5" />
-                        </Button>
+                        </button>
                       </div>
 
                       {/* Optional question */}
@@ -554,7 +708,7 @@ export function AnalyzerAndAssistant() {
                         />
                       </div>
 
-                      <Button 
+                      <Button
                         onClick={runAnalysis}
                         disabled={status === "uploading"}
                         className="w-full py-6 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20 gap-2"
@@ -567,54 +721,63 @@ export function AnalyzerAndAssistant() {
 
                   {/* REJECTION CARD DETAILS */}
                   {status === "rejected" && analysisResult && (
-                    <div className="mt-6 p-5 bg-destructive/10 border border-destructive/30 rounded-2xl flex gap-4 text-left">
-                      <AlertCircle className="w-8 h-8 text-destructive shrink-0 mt-0.5" />
-                      <div className="space-y-2">
-                        <h4 className="font-bold text-destructive text-lg">
-                          {language === "hi" ? "दस्तावेज़ अस्वीकार कर दिया गया" : "Document Rejected"}
-                        </h4>
-                        <p className="text-sm text-foreground/80 font-medium">
-                          {analysisResult.reason || "This document was not recognized as an Indian government form."}
-                        </p>
-                        <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
-                          <strong>{language === "hi" ? "दिशा-निर्देश:" : "Guidance:"}</strong> {analysisResult.guidance || "Please upload a valid blank printed government application form."}
-                        </p>
+                    <div className="space-y-4 mt-6">
+                      <VerificationReport result={analysisResult} language={language} />
+                      <div className="p-5 bg-destructive/10 border border-destructive/30 rounded-2xl flex gap-4 text-left">
+                        <AlertCircle className="w-8 h-8 text-destructive shrink-0 mt-0.5" />
+                        <div className="space-y-2">
+                          <h4 className="font-bold text-destructive text-lg">
+                            {language === "hi" ? "दस्तावेज़ अस्वीकार कर दिया गया" : "Document Rejected"}
+                          </h4>
+                          <p className="text-sm text-foreground/80 font-medium">
+                            {analysisResult.reason || "This document was not recognized as an Indian government form."}
+                          </p>
+                          <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
+                            <strong>{language === "hi" ? "दिशा-निर्देश:" : "Guidance:"}</strong> {(analysisResult.guidance as any) || "Please upload a valid blank printed government application form."}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
 
                   {/* LOW CONFIDENCE CARD */}
                   {status === "low_confidence" && analysisResult && (
-                    <div className="mt-6 p-5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex gap-4 text-left">
-                      <AlertCircle className="w-8 h-8 text-amber-500 shrink-0 mt-0.5" />
-                      <div className="space-y-2">
-                        <h4 className="font-bold text-amber-600 text-lg">
-                          {language === "hi" ? "कम गुणवत्ता / अस्पष्ट फोटो" : "Low Image Quality"}
-                        </h4>
-                        <p className="text-sm text-foreground/80 font-medium">
-                          {analysisResult.reason}
-                        </p>
-                        <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
-                          <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong> {analysisResult.guidance}
-                        </p>
+                    <div className="space-y-4 mt-6">
+                      <VerificationReport result={analysisResult} language={language} />
+                      <div className="p-5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex gap-4 text-left">
+                        <AlertCircle className="w-8 h-8 text-amber-500 shrink-0 mt-0.5" />
+                        <div className="space-y-2">
+                          <h4 className="font-bold text-amber-600 text-lg">
+                            {language === "hi" ? "कम गुणवत्ता / अस्पष्ट फोटो" : "Low Image Quality"}
+                          </h4>
+                          <p className="text-sm text-foreground/80 font-medium">
+                            {analysisResult.reason}
+                          </p>
+                          <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
+                            <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong> {(analysisResult.guidance as any)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
 
                   {/* UNSUPPORTED FORM CARD */}
                   {status === "unsupported_form" && analysisResult && (
-                    <div className="mt-6 p-5 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl flex gap-4 text-left">
-                      <AlertCircle className="w-8 h-8 text-cyan-600 shrink-0 mt-0.5" />
-                      <div className="space-y-2">
-                        <h4 className="font-bold text-cyan-700 text-lg">
-                          {language === "hi" ? "असमर्थित सरकारी फॉर्म" : "Unsupported Government Form"}
-                        </h4>
-                        <p className="text-sm text-foreground/80 font-medium">
-                          {analysisResult.reason}
-                        </p>
-                        <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
-                          <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong> {analysisResult.guidance}
-                        </p>
+                    <div className="space-y-4 mt-6">
+                      <VerificationReport result={analysisResult} language={language} />
+                      <div className="p-5 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl flex gap-4 text-left">
+                        <AlertCircle className="w-8 h-8 text-cyan-600 shrink-0 mt-0.5" />
+                        <div className="space-y-2">
+                          <h4 className="font-bold text-cyan-700 text-lg">
+                            {language === "hi" ? "असमर्थित सरकारी फॉर्म" : "Unsupported Government Form"}
+                          </h4>
+                          <p className="text-sm text-foreground/80 font-medium">
+                            {analysisResult.reason}
+                          </p>
+                          <p className="text-xs text-muted-foreground bg-background/50 p-2.5 rounded-lg border border-border/40">
+                            <strong>{language === "hi" ? "सुझाव:" : "Guidance:"}</strong> {(analysisResult.guidance as any)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -630,10 +793,10 @@ export function AnalyzerAndAssistant() {
                         <p className="text-sm text-foreground/80 font-medium">
                           {errorMessage}
                         </p>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={runAnalysis}
                           className="mt-2 text-xs rounded-full gap-1.5"
                         >
@@ -663,7 +826,7 @@ export function AnalyzerAndAssistant() {
                   </div>
                   {/* Progress Line */}
                   <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                    <div 
+                    <div
                       className="bg-primary h-full transition-all duration-300 rounded-full"
                       style={{ width: `${progressPercent}%` }}
                     />
@@ -704,7 +867,7 @@ export function AnalyzerAndAssistant() {
                         {analysisResult.form_name}
                       </h3>
                     </div>
-                    
+
                     <div className="flex gap-2 relative z-50">
                       <Button
                         type="button"
@@ -724,16 +887,19 @@ export function AnalyzerAndAssistant() {
                           </>
                         )}
                       </Button>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
+                      <button
+                        type="button"
                         onClick={clearFile}
-                        className="rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40 relative z-50 pointer-events-auto"
+                        className="rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40 p-2.5 relative z-[9999] cursor-pointer pointer-events-auto transition-colors flex items-center justify-center w-10 h-10"
                       >
                         <X className="w-4 h-4" />
-                      </Button>
+                      </button>
                     </div>
+                  </div>
+
+                  {/* Verification & Quality Audit Panel */}
+                  <div className="p-6 border-b border-border/60 bg-muted/20">
+                    <VerificationReport result={analysisResult} language={language} />
                   </div>
 
                   {/* Custom Query Answer Banner */}
@@ -757,41 +923,36 @@ export function AnalyzerAndAssistant() {
                   <div className="flex border-b border-border overflow-x-auto scrollbar-none bg-muted/40">
                     <button
                       onClick={() => setActiveTab("summary")}
-                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
-                        activeTab === "summary" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
-                      }`}
+                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${activeTab === "summary" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
                     >
                       {language === "hi" ? "विवरण" : "Overview"}
                     </button>
                     <button
                       onClick={() => setActiveTab("eligibility")}
-                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
-                        activeTab === "eligibility" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
-                      }`}
+                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${activeTab === "eligibility" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
                     >
                       {language === "hi" ? "पात्रता" : "Eligibility"}
                     </button>
                     <button
                       onClick={() => setActiveTab("documents")}
-                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
-                        activeTab === "documents" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
-                      }`}
+                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${activeTab === "documents" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
                     >
                       {language === "hi" ? "दस्तावेज़" : "Required Docs"}
                     </button>
                     <button
                       onClick={() => setActiveTab("steps")}
-                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
-                        activeTab === "steps" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
-                      }`}
+                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${activeTab === "steps" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
                     >
                       {language === "hi" ? "भरने का तरीका" : "Filling Steps"}
                     </button>
                     <button
                       onClick={() => setActiveTab("submission")}
-                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${
-                        activeTab === "submission" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
-                      }`}
+                      className={`flex-1 py-3 px-4 text-center font-bold text-sm border-b-2 transition-all ${activeTab === "submission" ? "border-primary text-primary bg-background" : "border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
                     >
                       {language === "hi" ? "जमा कहाँ करें" : "Submission"}
                     </button>
@@ -905,7 +1066,7 @@ export function AnalyzerAndAssistant() {
                             </h5>
                             <p className="text-sm font-medium text-foreground">{analysisResult.guidance.submission.where}</p>
                           </div>
-                          
+
                           <div className="p-4 bg-muted/40 border border-border/40 rounded-xl space-y-1">
                             <h5 className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
                               <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
@@ -920,9 +1081,9 @@ export function AnalyzerAndAssistant() {
                                 <ExternalLink className="w-3.5 h-3.5 text-secondary" />
                                 {language === "hi" ? "आधिकारिक ऑनलाइन पोर्टल:" : "Official Online Submission Portal:"}
                               </h5>
-                              <a 
-                                href={analysisResult.guidance.submission.online_portal} 
-                                target="_blank" 
+                              <a
+                                href={analysisResult.guidance.submission.online_portal}
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
                               >
@@ -1012,11 +1173,10 @@ export function AnalyzerAndAssistant() {
       {/* Floating Sparkle FAB Widget */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
         {/* Floating Chat Panel */}
-        <div className={`mb-4 w-96 max-w-[calc(100vw-2rem)] h-[550px] bg-card rounded-3xl border border-border shadow-2xl flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
-          isChatOpen 
-            ? "opacity-100 scale-100 translate-y-0" 
+        <div className={`mb-4 w-96 max-w-[calc(100vw-2rem)] h-[550px] bg-card rounded-3xl border border-border shadow-2xl flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${isChatOpen
+            ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-90 translate-y-10 pointer-events-none"
-        }`}>
+          }`}>
           {/* Header */}
           <div className="bg-gradient-to-r from-primary to-indigo-600 p-4 text-white flex items-center justify-between shadow-md">
             <div className="flex items-center gap-3">
@@ -1029,7 +1189,7 @@ export function AnalyzerAndAssistant() {
                 <p className="text-[10px] text-white/80 font-medium">Online • Responds in Hindi & English</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setIsChatOpen(false)}
               className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white focus:outline-none"
             >
@@ -1041,16 +1201,14 @@ export function AnalyzerAndAssistant() {
           <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-muted/5 min-h-0">
             {messages.map((m, i) => (
               <div key={i} className={`flex gap-2.5 ${m.role === "user" ? "flex-row-reverse" : "text-left"}`}>
-                <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white shadow-sm ${
-                  m.role === "user" ? "bg-secondary" : "bg-primary"
-                }`}>
+                <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white shadow-sm ${m.role === "user" ? "bg-secondary" : "bg-primary"
+                  }`}>
                   {m.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                 </div>
-                <div className={`max-w-[75%] p-3 rounded-2xl text-xs font-medium leading-relaxed border shadow-sm ${
-                  m.role === "user" 
-                    ? "bg-secondary/10 border-secondary/20 text-foreground text-left rounded-tr-none" 
+                <div className={`max-w-[75%] p-3 rounded-2xl text-xs font-medium leading-relaxed border shadow-sm ${m.role === "user"
+                    ? "bg-secondary/10 border-secondary/20 text-foreground text-left rounded-tr-none"
                     : "bg-card border-border/80 text-foreground rounded-tl-none"
-                }`}>
+                  }`}>
                   {m.content}
                 </div>
               </div>
@@ -1087,7 +1245,7 @@ export function AnalyzerAndAssistant() {
           {/* Chat Input Controls */}
           <div className="p-3 border-t border-border flex gap-2 bg-card items-center">
             {isSpeechSupported && (
-              <Button 
+              <Button
                 onClick={toggleListening}
                 variant="outline"
                 size="icon"
@@ -1103,9 +1261,9 @@ export function AnalyzerAndAssistant() {
               placeholder="Ask anything about government schemes..."
               className="flex-1 min-w-0 px-3 py-2 rounded-full bg-muted border border-transparent focus:outline-none focus:bg-background focus:ring-2 focus:ring-primary/40 text-xs transition-all"
             />
-            <Button 
-              onClick={() => handleSend()} 
-              disabled={isChatLoading} 
+            <Button
+              onClick={() => handleSend()}
+              disabled={isChatLoading}
               size="icon"
               className="rounded-full shrink-0 w-9 h-9 bg-primary hover:bg-primary/95 text-white"
             >
@@ -1117,11 +1275,10 @@ export function AnalyzerAndAssistant() {
         {/* Circular Sparkle FAB Button */}
         <button
           onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 focus:outline-none hover:shadow-primary/30 hover:shadow-xl ${
-            isChatOpen 
-              ? "bg-slate-700 hover:bg-slate-800 text-white" 
+          className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 focus:outline-none hover:shadow-primary/30 hover:shadow-xl ${isChatOpen
+              ? "bg-slate-700 hover:bg-slate-800 text-white"
               : "bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-650 text-white"
-          }`}
+            }`}
         >
           {isChatOpen ? (
             <X className="w-6 h-6 transition-transform duration-300 rotate-90" />

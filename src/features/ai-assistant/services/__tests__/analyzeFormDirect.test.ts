@@ -26,6 +26,11 @@ describe("analyzeFormDirect", () => {
       form_code: "PMAY-U",
       form_name: "Pradhan Mantri Awas Yojana — Urban",
       confidence: 0.95,
+      isGovernmentRelated: true,
+      authenticity: "original",
+      authenticityReason: "Contains official central emblems and matches the standard layout.",
+      visualAnalysis: "Scanned printed document with form headers.",
+      documentType: "application_form",
       guidance: {
         summary: "This is a form for subsidized housing.",
         scheme_benefit: "Get up to 2.67 lakh subsidy.",

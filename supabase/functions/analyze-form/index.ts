@@ -1,4 +1,7 @@
+// @ts-ignore: Deno imports are not supported in standard Node projects
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
+
+declare const Deno: any;
 
 const NVIDIA_BASE = "https://integrate.api.nvidia.com/v1";
 const VISION_MODEL = "meta/llama-3.2-11b-vision-instruct";
@@ -22,7 +25,7 @@ function isRateLimited(ip: string, limit = 20, windowMs = 60_000): boolean {
   return timestamps.length > limit;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   try {
@@ -54,28 +57,46 @@ Deno.serve(async (req) => {
       return errorResponse("Only PDF, JPEG, PNG, or WebP files are accepted", 400);
     }
 
-    // File is NEVER written to storage. Processed entirely in memory,
-    // discarded as soon as this function returns.
+    // File is NEVER written to st    // ── 2. STEP 1: Government Gate — VLM Classification ───────────
+    const classificationPrompt = `You are an expert Indian Government document classifier, quality auditor, and fraud detection assistant.
+Your task is to analyze the provided image/PDF and determine its relation to Indian government documents/forms, check its authenticity (detecting if it is original, a fake/tampered document, a blank sample/template, or suspicious), and identify if it is a recognized government application form.
 
-    // ── 2. STEP 1: Government Gate — VLM Classification ───────────
-    const classificationPrompt = `You are a strict government document classifier for Indian government forms.
+Respond ONLY with a valid JSON object. No preamble, no explanation, no markdown formatting (do NOT wrap the JSON in \`\`\`json).
 
-Analyze the provided document image/PDF and respond ONLY with a valid JSON object. No preamble, no explanation.
+Step-by-Step Analysis Guide for your response:
+1. visualAnalysis: Describe in detail what you see in the image (e.g., "A photograph of a valley with mountains", "A scanned Aadhaar Card", "An official printed form titled PM-KISAN application", or "A blank white sheet").
+2. documentType: Categorize the image content. Supported values: "application_form", "id_card", "receipt", "utility_bill", "certificate", "photograph", "artwork", "screenshot_non_document", "other_document", "empty_canvas", "unknown".
+3. isGovernmentRelated: Set to true if the document/image is directly related to the Indian Central or State Government, its schemes, official identification, departments, or portals (e.g., Aadhaar Card, PAN Card, PMAY application, e-District portal screenshot, government letters, certificates, etc.). Set to false if it is a private document (e.g., restaurant bill, private invoice, school ID) or not a document at all (e.g., landscape photo, family photo).
+4. authenticity: Classify the authenticity of this document. Supported values:
+   - "original": A filled, stamped, signed, or standard printed official document/form showing no obvious signs of digital manipulation, counterfeiting, or sample watermarks.
+   - "fake": Obviously falsified, containing counterfeit elements, or manipulated metadata/text.
+   - "sample_or_template": A blank template, example form, specimen copy, draft, or demo copy (often containing watermarks like "SAMPLE" or "SPECIMEN" or completely empty fields).
+   - "suspicious": Contains anomalies, mismatched fonts, overlay text that looks pasted, blurred areas over sensitive details, or signatures/stamps that seem digitally edited/copied.
+   - "not_applicable": For photographs, illustrations, drawings, or non-government private items where government authenticity is not relevant.
+5. authenticityReason: Explain clearly and objectively why you classified it under that authenticity status. Mention specific visual clues (e.g., "Contains official state emblem, standard printed layout", "Clearly marked with a diagonal 'SAMPLE COPY' watermark", "Contains digitally pasted/unaligned text fields suggesting tampering", "Not a government document").
+6. isGovernmentForm: Set to true ONLY if the document is a printed or digital Indian government application, enrollment, or registration form (e.g., PMAY application form, Aadhaar update form, PM-Kisan form, etc.). If it is a standalone ID card (like Aadhaar card on its own, PAN card on its own), a certificate, or a bill, set this to false.
+7. formCode:
+   - If isGovernmentForm is true and it matches one of these codes: "PMAY-U", "PMAY-G", "PM-KISAN", "AADHAAR-UPDATE", "AADHAAR-ENROLLMENT", "AYUSHMAN-BHARAT", "PM-SVANidhi", "NREGA-JOB-CARD", "SCHOLARSHIP-NSP", "INCOME-CERT".
+   - If it is a government form but NOT in the list above, use "UNKNOWN-GOVT".
+   - If it is not a government form, use "NOT-A-FORM".
+8. confidence: A float between 0.0 and 1.0 representing your certainty of this entire classification.
+9. detectedFormName: The human-readable name of the form/document if detected (e.g., "Pradhan Mantri Awas Yojana Urban Application Form"), or null.
+10. isValid: Set to true if the document is a recognized, valid government form that can be processed for guidelines (i.e. isGovernmentForm is true and formCode is NOT "NOT-A-FORM" and formCode is NOT "UNKNOWN-GOVT"). Otherwise, set to false.
+11. rejectionReason: Detailed reason why the document is not a valid recognized form (or null if isValid is true).
 
-Rules:
-- If this is NOT a government form (e.g. restaurant bill, selfie, random photo, bank statement, private letter, blank page, ID card like Aadhaar Card/PAN card directly without a form), set isValid to false.
-- Only recognize these form codes: PMAY-U, PMAY-G, PM-KISAN, AADHAAR-UPDATE, AADHAAR-ENROLLMENT, AYUSHMAN-BHARAT, PM-SVANidhi, NREGA-JOB-CARD, SCHOLARSHIP-NSP, INCOME-CERT
-- If you can see it is a government form but the code is not in the list above, set formCode to "UNKNOWN-GOVT".
-- confidence is a float 0.0 to 1.0 representing your certainty.
-
-Respond with exactly this JSON structure:
+Respond with EXACTLY this JSON structure:
 {
-  "isValid": boolean,
+  "visualAnalysis": "string",
+  "documentType": "application_form" | "id_card" | "receipt" | "utility_bill" | "certificate" | "photograph" | "artwork" | "screenshot_non_document" | "other_document" | "empty_canvas" | "unknown",
+  "isGovernmentRelated": boolean,
+  "authenticity": "original" | "fake" | "sample_or_template" | "suspicious" | "not_applicable",
+  "authenticityReason": "string",
   "isGovernmentForm": boolean,
   "formCode": "PMAY-U" | "PMAY-G" | "PM-KISAN" | "AADHAAR-UPDATE" | "AADHAAR-ENROLLMENT" | "AYUSHMAN-BHARAT" | "PM-SVANidhi" | "NREGA-JOB-CARD" | "SCHOLARSHIP-NSP" | "INCOME-CERT" | "UNKNOWN-GOVT" | "NOT-A-FORM",
   "confidence": float,
-  "detectedFormName": "human readable name or null",
-  "rejectionReason": "reason if isValid is false, else null"
+  "detectedFormName": "string or null",
+  "isValid": boolean,
+  "rejectionReason": "string or null"
 }`;
 
     const visionResponse = await callNvidiaNIM(VISION_MODEL, [
@@ -92,8 +113,9 @@ Respond with exactly this JSON structure:
     ]);
 
     let classification;
+    const rawText = visionResponse.choices[0].message.content;
+    console.log("VLM RAW CLASSIFICATION:", rawText);
     try {
-      const rawText = visionResponse.choices[0].message.content;
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
       classification = JSON.parse(jsonMatch![0]);
     } catch (e) {
@@ -102,11 +124,26 @@ Respond with exactly this JSON structure:
     }
 
     // ── 3. Enforce strictness gate ────────────────────────────────
+    // Hard override to prevent logical contradictions (e.g. non-government classified as a form)
+    if (classification.isGovernmentRelated === false) {
+      classification.isGovernmentForm = false;
+      classification.isValid = false;
+      classification.formCode = "NOT-A-FORM";
+      if (!classification.rejectionReason) {
+        classification.rejectionReason = "This document is not related to the Indian government.";
+      }
+    }
+
     if (!classification.isGovernmentForm || !classification.isValid) {
       return jsonResponse({
         status: "rejected",
         reason: classification.rejectionReason || "This does not appear to be a recognized Indian government form.",
         confidence: classification.confidence,
+        isGovernmentRelated: classification.isGovernmentRelated ?? false,
+        authenticity: classification.authenticity ?? "not_applicable",
+        authenticityReason: classification.authenticityReason ?? "",
+        visualAnalysis: classification.visualAnalysis ?? "",
+        documentType: classification.documentType ?? "unknown",
         guidance: "Please upload the original printed government form (PDF or clear photo). Examples: PMAY application form, PM-Kisan registration, Aadhaar update form."
       });
     }
@@ -115,6 +152,12 @@ Respond with exactly this JSON structure:
       return jsonResponse({
         status: "low_confidence",
         reason: `Document recognized as ${classification.detectedFormName || "a government form"} but image quality is too low (confidence: ${(classification.confidence * 100).toFixed(0)}%).`,
+        confidence: classification.confidence,
+        isGovernmentRelated: classification.isGovernmentRelated ?? false,
+        authenticity: classification.authenticity ?? "not_applicable",
+        authenticityReason: classification.authenticityReason ?? "",
+        visualAnalysis: classification.visualAnalysis ?? "",
+        documentType: classification.documentType ?? "unknown",
         guidance: "Please upload a clearer scan or photo. Ensure good lighting, no blurring, and the full form is visible."
       });
     }
@@ -124,6 +167,12 @@ Respond with exactly this JSON structure:
         status: "unsupported_form",
         reason: "This appears to be a government form, but it is not in our knowledge base yet.",
         detectedFormName: classification.detectedFormName,
+        confidence: classification.confidence,
+        isGovernmentRelated: classification.isGovernmentRelated ?? false,
+        authenticity: classification.authenticity ?? "not_applicable",
+        authenticityReason: classification.authenticityReason ?? "",
+        visualAnalysis: classification.visualAnalysis ?? "",
+        documentType: classification.documentType ?? "unknown",
         guidance: "Currently supported forms: PMAY, PM-Kisan, Aadhaar Update/Enrollment, Ayushman Bharat, PM SVANidhi, NREGA Job Card, NSP Scholarship, Income Certificate."
       });
     }
@@ -278,6 +327,11 @@ Generate the complete guidance JSON for this form. If a citizen's specific quest
       form_code:       classification.formCode,
       form_name:       formMeta.form_name,
       confidence:      classification.confidence,
+      isGovernmentRelated: classification.isGovernmentRelated ?? false,
+      authenticity: classification.authenticity ?? "not_applicable",
+      authenticityReason: classification.authenticityReason ?? "",
+      visualAnalysis: classification.visualAnalysis ?? "",
+      documentType: classification.documentType ?? "unknown",
       chunks_used:     finalChunks.length,
       guidance
     });

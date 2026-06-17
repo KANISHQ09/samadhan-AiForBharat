@@ -149,6 +149,11 @@ export interface FormAnalysisResult {
   confidence?: number;
   chunks_used?: number;
   reason?: string;
+  isGovernmentRelated?: boolean;
+  authenticity?: "original" | "fake" | "sample_or_template" | "suspicious" | "not_applicable";
+  authenticityReason?: string;
+  visualAnalysis?: string;
+  documentType?: string;
   guidance?: {
     summary: string;
     scheme_benefit: string;
@@ -256,7 +261,7 @@ async function pdfFirstPageToJpeg(
   canvas.height = viewport.height;
   const ctx = canvas.getContext("2d")!;
 
-  await page.render({ canvasContext: ctx, viewport }).promise;
+  await page.render({ canvasContext: ctx, viewport, canvas }).promise;
 
   // Export as JPEG (quality 0.92) — strips alpha, smaller payload
   const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
