@@ -3,6 +3,7 @@ import { Header } from "@/shared/components/Header";
 import { Footer } from "@/shared/components/Footer";
 import { BackgroundPattern } from "@/shared/components/BackgroundPattern";
 import { ROUTES } from "@/shared/config/routes";
+import { GlobalChatbot } from "@/features/ai-assistant/components/GlobalChatbot";
 
 const AUTH_ROUTES = [ROUTES.SIGN_IN, ROUTES.SIGN_UP];
 
@@ -18,6 +19,7 @@ export function MainLayout() {
         <Outlet />
       </main>
       {!isAuthPage && <Footer />}
+      {!isAuthPage && <GlobalChatbot />}
     </div>
   );
 }
