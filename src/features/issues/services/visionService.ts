@@ -15,6 +15,8 @@
  * an empty result so the user can still fill in details manually.
  */
 
+import { supabase } from "@/integrations/supabase/client";
+
 // --------------------------------------------------------------------------
 // Types
 // --------------------------------------------------------------------------
@@ -108,47 +110,65 @@ export const visionService = {
 
     // ── Build the request ────────────────────────────────────────────────
     // The endpoint is the Supabase Edge Function or a FastAPI microservice.
-    // Falls back to a Gemini Vision call if VITE_VISION_API_URL is not set.
-    const endpointUrl =
-      (import.meta as any).env?.VITE_VISION_API_URL ||
-      `${(import.meta as any).env?.VITE_SUPABASE_URL}/functions/v1/detect-issue`;
+    // Falls back to the Supabase Edge Function invoke if VITE_VISION_API_URL is not set.
+    const visionApiUrl = (import.meta as any).env?.VITE_VISION_API_URL;
+    let raw: any;
 
-    let response: Response;
-    try {
-      response = await fetch(endpointUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: options.base64Image,
-          mime_type: options.mimeType ?? "image/jpeg",
-        }),
-        signal: AbortSignal.timeout(15_000), // 15 s timeout
-      });
-    } catch (networkErr) {
-      // Network unavailable or endpoint not deployed — degrade gracefully
-      console.warn("[visionService] Vision endpoint unreachable:", networkErr);
-      return emptyResult;
-    }
+    if (visionApiUrl) {
+      // Use configured FastAPI/external vision endpoint
+      try {
+        const response = await fetch(visionApiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image: options.base64Image,
+            mime_type: options.mimeType ?? "image/jpeg",
+          }),
+          signal: AbortSignal.timeout(15_000), // 15 s timeout
+        });
 
-    if (!response.ok) {
-      console.warn("[visionService] Vision endpoint returned", response.status);
-      return emptyResult;
+        if (!response.ok) {
+          console.warn("[visionService] Vision endpoint returned", response.status);
+          return emptyResult;
+        }
+        raw = await response.json();
+      } catch (networkErr) {
+        console.warn("[visionService] Vision endpoint unreachable:", networkErr);
+        return emptyResult;
+      }
+    } else {
+      // Invoke the Supabase Edge Function directly (attaches Authorization JWT automatically)
+      try {
+        const { data, error } = await supabase.functions.invoke("detect-issue", {
+          body: { imageBase64: options.base64Image },
+        });
+
+        if (error) {
+          console.warn("[visionService] Edge Function detection failed:", error);
+          return emptyResult;
+        }
+        raw = data;
+      } catch (err) {
+        console.warn("[visionService] Error calling Edge Function:", err);
+        return emptyResult;
+      }
     }
 
     // ── Parse and normalise response ─────────────────────────────────────
-    let raw: any;
-    try {
-      raw = await response.json();
-    } catch {
-      console.warn("[visionService] Failed to parse vision response JSON");
-      return emptyResult;
-    }
-
-    // The Edge Function / FastAPI is expected to return:
-    //   { classes: string[], annotatedImage?: string, confidences?: Record<string, number> }
     const rawClasses: string[] = Array.isArray(raw?.classes) ? raw.classes : [];
-    const confidences: Record<string, number> = raw?.confidences ?? {};
     const annotatedImage: string | null = raw?.annotatedImage ?? raw?.annotated_image ?? null;
+
+    // Build the confidences map, using raw.confidences if available (e.g. from FastAPI)
+    // or reconstructing it from the Roboflow predictions array.
+    const confidences: Record<string, number> = raw?.confidences ?? {};
+    if (Array.isArray(raw?.predictions)) {
+      for (const p of raw.predictions) {
+        if (p.class && typeof p.confidence === "number") {
+          const clsLower = p.class.toLowerCase();
+          confidences[clsLower] = Math.max(confidences[clsLower] ?? 0, p.confidence);
+        }
+      }
+    }
 
     // Normalise class names using the civic map
     const normalisedClasses = rawClasses.map(
