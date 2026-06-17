@@ -50,7 +50,10 @@ BEGIN
   -- ── 1. Super Admin ───────────────────────────────────────────────────────
   INSERT INTO auth.users (
     id, email, encrypted_password, email_confirmed_at,
-    raw_user_meta_data, raw_app_meta_data, role, aud
+    raw_user_meta_data, raw_app_meta_data, role, aud,
+    instance_id, confirmation_token, recovery_token,
+    email_change_token_new, email_change, email_change_token_current,
+    created_at, updated_at
   ) VALUES (
     v_super_admin_id,
     'admin@samadhan.gov.in',
@@ -58,7 +61,10 @@ BEGIN
     now(),
     '{"full_name": "Samadhan Super Admin", "is_mock_seed": true}'::jsonb,
     '{"provider": "email", "providers": ["email"]}'::jsonb,
-    'authenticated', 'authenticated'
+    'authenticated', 'authenticated',
+    '00000000-0000-0000-0000-000000000000', '', '',
+    '', '', '',
+    now(), now()
   );
   INSERT INTO public.profiles (user_id, full_name, city, state)
     VALUES (v_super_admin_id, 'Samadhan Super Admin', 'New Delhi', 'Delhi')
@@ -76,7 +82,10 @@ BEGIN
   -- ── 2. Water Supply Admin ────────────────────────────────────────────────
   INSERT INTO auth.users (
     id, email, encrypted_password, email_confirmed_at,
-    raw_user_meta_data, raw_app_meta_data, role, aud
+    raw_user_meta_data, raw_app_meta_data, role, aud,
+    instance_id, confirmation_token, recovery_token,
+    email_change_token_new, email_change, email_change_token_current,
+    created_at, updated_at
   ) VALUES (
     v_water_id,
     'water@samadhan.gov.in',
@@ -84,7 +93,10 @@ BEGIN
     now(),
     '{"full_name": "Water Supply Admin", "is_mock_seed": true}'::jsonb,
     '{"provider": "email", "providers": ["email"]}'::jsonb,
-    'authenticated', 'authenticated'
+    'authenticated', 'authenticated',
+    '00000000-0000-0000-0000-000000000000', '', '',
+    '', '', '',
+    now(), now()
   );
   INSERT INTO public.profiles (user_id, full_name, city, state)
     VALUES (v_water_id, 'Water Supply Admin', 'Mumbai', 'Maharashtra')
@@ -102,7 +114,10 @@ BEGIN
   -- ── 3. Sanitation Admin ──────────────────────────────────────────────────
   INSERT INTO auth.users (
     id, email, encrypted_password, email_confirmed_at,
-    raw_user_meta_data, raw_app_meta_data, role, aud
+    raw_user_meta_data, raw_app_meta_data, role, aud,
+    instance_id, confirmation_token, recovery_token,
+    email_change_token_new, email_change, email_change_token_current,
+    created_at, updated_at
   ) VALUES (
     v_sanitation_id,
     'sanitation@samadhan.gov.in',
@@ -110,7 +125,10 @@ BEGIN
     now(),
     '{"full_name": "Sanitation Admin", "is_mock_seed": true}'::jsonb,
     '{"provider": "email", "providers": ["email"]}'::jsonb,
-    'authenticated', 'authenticated'
+    'authenticated', 'authenticated',
+    '00000000-0000-0000-0000-000000000000', '', '',
+    '', '', '',
+    now(), now()
   );
   INSERT INTO public.profiles (user_id, full_name, city, state)
     VALUES (v_sanitation_id, 'Sanitation Admin', 'Bengaluru', 'Karnataka')
@@ -128,7 +146,10 @@ BEGIN
   -- ── 4. Electricity Admin ─────────────────────────────────────────────────
   INSERT INTO auth.users (
     id, email, encrypted_password, email_confirmed_at,
-    raw_user_meta_data, raw_app_meta_data, role, aud
+    raw_user_meta_data, raw_app_meta_data, role, aud,
+    instance_id, confirmation_token, recovery_token,
+    email_change_token_new, email_change, email_change_token_current,
+    created_at, updated_at
   ) VALUES (
     v_electricity_id,
     'electricity@samadhan.gov.in',
@@ -136,7 +157,10 @@ BEGIN
     now(),
     '{"full_name": "Electricity Admin", "is_mock_seed": true}'::jsonb,
     '{"provider": "email", "providers": ["email"]}'::jsonb,
-    'authenticated', 'authenticated'
+    'authenticated', 'authenticated',
+    '00000000-0000-0000-0000-000000000000', '', '',
+    '', '', '',
+    now(), now()
   );
   INSERT INTO public.profiles (user_id, full_name, city, state)
     VALUES (v_electricity_id, 'Electricity Admin', 'Chennai', 'Tamil Nadu')
@@ -154,7 +178,10 @@ BEGIN
   -- ── 5. Roads Admin ───────────────────────────────────────────────────────
   INSERT INTO auth.users (
     id, email, encrypted_password, email_confirmed_at,
-    raw_user_meta_data, raw_app_meta_data, role, aud
+    raw_user_meta_data, raw_app_meta_data, role, aud,
+    instance_id, confirmation_token, recovery_token,
+    email_change_token_new, email_change, email_change_token_current,
+    created_at, updated_at
   ) VALUES (
     v_roads_id,
     'roads@samadhan.gov.in',
@@ -162,7 +189,10 @@ BEGIN
     now(),
     '{"full_name": "Roads Admin", "is_mock_seed": true}'::jsonb,
     '{"provider": "email", "providers": ["email"]}'::jsonb,
-    'authenticated', 'authenticated'
+    'authenticated', 'authenticated',
+    '00000000-0000-0000-0000-000000000000', '', '',
+    '', '', '',
+    now(), now()
   );
   INSERT INTO public.profiles (user_id, full_name, city, state)
     VALUES (v_roads_id, 'Roads Admin', 'Pune', 'Maharashtra')
@@ -180,7 +210,10 @@ BEGIN
   -- ── 6. Parks & Gardens Admin ─────────────────────────────────────────────
   INSERT INTO auth.users (
     id, email, encrypted_password, email_confirmed_at,
-    raw_user_meta_data, raw_app_meta_data, role, aud
+    raw_user_meta_data, raw_app_meta_data, role, aud,
+    instance_id, confirmation_token, recovery_token,
+    email_change_token_new, email_change, email_change_token_current,
+    created_at, updated_at
   ) VALUES (
     v_parks_id,
     'parks@samadhan.gov.in',
@@ -188,7 +221,10 @@ BEGIN
     now(),
     '{"full_name": "Parks & Gardens Admin", "is_mock_seed": true}'::jsonb,
     '{"provider": "email", "providers": ["email"]}'::jsonb,
-    'authenticated', 'authenticated'
+    'authenticated', 'authenticated',
+    '00000000-0000-0000-0000-000000000000', '', '',
+    '', '', '',
+    now(), now()
   );
   INSERT INTO public.profiles (user_id, full_name, city, state)
     VALUES (v_parks_id, 'Parks & Gardens Admin', 'Jaipur', 'Rajasthan')
@@ -206,7 +242,10 @@ BEGIN
   -- ── 7. Buildings Admin ───────────────────────────────────────────────────
   INSERT INTO auth.users (
     id, email, encrypted_password, email_confirmed_at,
-    raw_user_meta_data, raw_app_meta_data, role, aud
+    raw_user_meta_data, raw_app_meta_data, role, aud,
+    instance_id, confirmation_token, recovery_token,
+    email_change_token_new, email_change, email_change_token_current,
+    created_at, updated_at
   ) VALUES (
     v_buildings_id,
     'buildings@samadhan.gov.in',
@@ -214,7 +253,10 @@ BEGIN
     now(),
     '{"full_name": "Buildings Admin", "is_mock_seed": true}'::jsonb,
     '{"provider": "email", "providers": ["email"]}'::jsonb,
-    'authenticated', 'authenticated'
+    'authenticated', 'authenticated',
+    '00000000-0000-0000-0000-000000000000', '', '',
+    '', '', '',
+    now(), now()
   );
   INSERT INTO public.profiles (user_id, full_name, city, state)
     VALUES (v_buildings_id, 'Buildings Admin', 'Hyderabad', 'Telangana')
